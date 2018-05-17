@@ -36,7 +36,7 @@
 #include "LzmaSDKObjCExtractCallback.h"
 
 namespace LzmaSDKObjC {
-	
+
 	class FileDecoder final : public LzmaSDKObjC::BaseCoder {
 	private:
 		LzmaSDKObjC::OpenCallback * _openCallbackRef;
@@ -49,7 +49,7 @@ namespace LzmaSDKObjC {
 
 		uint32_t _itemsCount;
 		uint32_t _iterateIndex;
-        
+
 		void cleanOpenCallbackRef();
 		void cleanExtractCallbackRef();
 
@@ -57,6 +57,7 @@ namespace LzmaSDKObjC {
         bool isSolidArchive() const;
 		uint32_t itemsCount() const;
 		void iterateStart();
+		bool iterateJumpTo(uint32_t index);
 		bool iterateNext();
 		uint32_t iteratorIndex() const;
 
@@ -78,4 +79,4 @@ namespace LzmaSDKObjC {
 	};
 }
 
-#endif 
+#endif

@@ -80,7 +80,7 @@ LZMASDKOBJC_EXTERN NSString * const _Nonnull kLzmaSDKObjCErrorDescrEncDecNotCrea
 
 
 /**
- @brief URL to the archive file. 
+ @brief URL to the archive file.
  */
 @property (nonatomic, strong, readonly) NSURL * _Nullable fileURL;
 
@@ -132,9 +132,13 @@ LZMASDKOBJC_EXTERN NSString * const _Nonnull kLzmaSDKObjCErrorDescrEncDecNotCrea
  */
 - (BOOL) open:(NSError * _Nullable * _Nullable) error;
 
+/**
+ @brief Load the item at the specified index.
+ */
+- (LzmaSDKObjCItem * _Nullable) itemAtIndex: (NSUInteger) index;
 
 /**
- @brief Iterate thought all archive items. 
+ @brief Iterate thought all archive items.
  Items created during each iteration, so track, filter & store for the next use.
  */
 - (BOOL) iterateWithHandler:(BOOL(^ _Nonnull)(LzmaSDKObjCItem * _Nonnull item, NSError * _Nullable error)) handler;
@@ -172,4 +176,3 @@ LZMASDKOBJC_EXTERN NSString * const _Nonnull kLzmaSDKObjCErrorDescrEncDecNotCrea
  @return Type by the path extension or @b LzmaSDKObjCFileTypeUndefined
  */
 LZMASDKOBJC_EXTERN LzmaSDKObjCFileType LzmaSDKObjCDetectFileType(NSURL * _Nullable fileURL);
-

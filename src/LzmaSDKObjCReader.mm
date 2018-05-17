@@ -78,6 +78,69 @@ static void * _LzmaSDKObjCReaderGetVoidCallback1(void * context) {
 	return NO;
 }
 
+- (LzmaSDKObjCItem * _Nullable) itemAtIndex: (NSUInteger) index {
+
+    if (_decoder) {
+        _decoder->clearLastError();
+        if (!_decoder->iterateJumpTo(index)) {
+            @throw [NSError errorWithDomain:kLzmaSDKObjCErrorDomain code: -1 userInfo: nil];
+        }
+
+        LzmaSDKObjCItem * item = nil;
+        NSError * error = nil;
+
+        PROPVARIANT prop, name;
+        memset(&prop, 0, sizeof(PROPVARIANT));
+        memset(&name, 0, sizeof(PROPVARIANT));
+        bool r = _decoder->readIteratorProperty(&prop, kpidSize);
+        r |= _decoder->readIteratorProperty(&name, kpidPath);
+        if (r) {
+            item = [[LzmaSDKObjCItem alloc] init];
+            if (item) {
+                item->_index = _decoder->iteratorIndex();
+                item->_orgSize = LzmaSDKObjC::Common::PROPVARIANTGetUInt64(&prop);
+
+                if (name.vt == VT_BSTR && name.bstrVal)
+                    item->_path = [[NSString alloc] initWithBytes:name.bstrVal length:sizeof(wchar_t) * wcslen(name.bstrVal) encoding:NSUTF32LittleEndianStringEncoding];
+
+                memset(&prop, 0, sizeof(PROPVARIANT));
+                if (_decoder->readIteratorProperty(&prop, kpidPackSize))
+                    item->_packedSize = LzmaSDKObjC::Common::PROPVARIANTGetUInt64(&prop);
+
+                memset(&prop, 0, sizeof(PROPVARIANT));
+                if (_decoder->readIteratorProperty(&prop, kpidCTime))
+                    if (prop.vt == VT_FILETIME) item->_cDate = LzmaSDKObjC::Common::FILETIMEToUnixTime(prop.filetime);
+
+                memset(&prop, 0, sizeof(PROPVARIANT));
+                if (_decoder->readIteratorProperty(&prop, kpidATime))
+                    if (prop.vt == VT_FILETIME) item->_aDate = LzmaSDKObjC::Common::FILETIMEToUnixTime(prop.filetime);
+
+                memset(&prop, 0, sizeof(PROPVARIANT));
+                if (_decoder->readIteratorProperty(&prop, kpidMTime))
+                    if (prop.vt == VT_FILETIME) item->_mDate = LzmaSDKObjC::Common::FILETIMEToUnixTime(prop.filetime);
+
+                memset(&prop, 0, sizeof(PROPVARIANT));
+                if (_decoder->readIteratorProperty(&prop, kpidEncrypted))
+                    if (prop.vt == VT_BOOL && prop.boolVal) item->_flags |= LzmaObjcItemFlagIsEncrypted;
+
+                memset(&prop, 0, sizeof(PROPVARIANT));
+                if (_decoder->readIteratorProperty(&prop, kpidCRC))
+                    item->_crc = (uint32_t)LzmaSDKObjC::Common::PROPVARIANTGetUInt64(&prop);
+
+                memset(&prop, 0, sizeof(PROPVARIANT));
+                if (_decoder->readIteratorProperty(&prop, kpidIsDir))
+                    if (prop.vt == VT_BOOL && prop.boolVal) item->_flags |= LzmaObjcItemFlagIsDir;
+            } else {
+                @throw [NSError errorWithDomain:kLzmaSDKObjCErrorDomain code: -1 userInfo: nil];
+            }
+        }
+        NWindows::NCOM::PropVariant_Clear(&name);
+
+        return item;
+    }
+    return NULL;
+}
+
 - (BOOL) iterateWithHandler:(BOOL(^ _Nonnull)(LzmaSDKObjCItem * _Nonnull item, NSError * _Nullable error)) handler {
 	NSParameterAssert(handler);
 	if (handler && _decoder) {
@@ -105,7 +168,7 @@ static void * _LzmaSDKObjCReaderGetVoidCallback1(void * context) {
                     memset(&prop, 0, sizeof(PROPVARIANT));
                     if (_decoder->readIteratorProperty(&prop, kpidPackSize))
                         item->_packedSize = LzmaSDKObjC::Common::PROPVARIANTGetUInt64(&prop);
-                    
+
 					memset(&prop, 0, sizeof(PROPVARIANT));
 					if (_decoder->readIteratorProperty(&prop, kpidCTime))
 						if (prop.vt == VT_FILETIME) item->_cDate = LzmaSDKObjC::Common::FILETIMEToUnixTime(prop.filetime);
@@ -243,7 +306,7 @@ static void * _LzmaSDKObjCReaderGetVoidCallback1(void * context) {
 
 		_fileType = LzmaSDKObjCDetectFileType(fileURL);
 		_fileURL = fileURL;
-		
+
 		_decoder = new LzmaSDKObjC::FileDecoder();
 		NSAssert(_decoder, @"Can't create decoder object");
 	}
@@ -285,4 +348,3 @@ LzmaSDKObjCFileType LzmaSDKObjCDetectFileType(NSURL * _Nullable fileURL) {
 	}
 	return LzmaSDKObjCFileTypeUndefined;
 }
-
